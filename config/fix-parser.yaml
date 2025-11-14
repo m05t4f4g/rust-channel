@@ -1,0 +1,30 @@
+enabled: true
+inspect_tags:
+  - 8    # BeginString
+  - 9    # BodyLength
+  - 35   # MsgType
+  - 49   # SenderCompID
+  - 56   # TargetCompID
+  - 34   # MsgSeqNum
+  - 52   # SendingTime
+  - 10   # CheckSum
+  - 11   # ClOrdID
+  - 38   # OrderQty
+  - 40   # OrdType
+  - 44   # Price
+  - 54   # Side
+  - 55   # Symbol
+required_tags:
+  - 8
+  - 9
+  - 35
+  - 49
+  - 56
+  - 34
+  - 52
+  - 10
+validate_checksum: true
+validate_structure: true
+log_inspected_tags: true
+max_message_length: 8192
+min_message_length: 20

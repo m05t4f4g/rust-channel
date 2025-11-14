@@ -1,0 +1,23 @@
+- name: "allow_fix_messages"
+  match_pattern:
+    msg_type: "FIX"
+    source_ip: null
+    min_length: 10
+    max_length: 4096
+  action: !Allow
+
+- name: "rate_limit_protection"
+  match_pattern:
+    msg_type: null
+    source_ip: null
+    min_length: null
+    max_length: null
+  action: !RateLimit 100
+
+- name: "deny_large_messages"
+  match_pattern:
+    msg_type: null
+    source_ip: null
+    min_length: 5000
+    max_length: null
+  action: !Deny
