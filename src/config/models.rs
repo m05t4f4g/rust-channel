@@ -3,14 +3,28 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
     pub listen_addr: std::net::SocketAddr,
-    pub backend_addr: std::net::SocketAddr,
+    pub backend_addr: String,
     pub tls_enabled: bool,
+    pub websocket_enabled: bool,
     pub cert_path: Option<String>,
     pub key_path: Option<String>,
     pub max_connections: u32,
     pub connection_timeout: std::time::Duration,
 }
-
+impl Default for ServerConfig {
+    fn default() -> Self {
+        Self {
+            listen_addr: "127.0.0.1:8080".parse().unwrap(),
+            backend_addr: "127.0.0.1:8081".to_string(),
+            tls_enabled: false,
+            websocket_enabled: false,  // Default to false
+            cert_path: None,
+            key_path: None,
+            max_connections: 10,
+            connection_timeout: std::time::Duration::from_secs(30),
+        }
+    }
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatchPattern {
     pub msg_type: Option<String>,

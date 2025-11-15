@@ -1,5 +1,6 @@
 pub mod tcp;
 pub mod tls;
+pub mod websocket;
 pub mod backend;
 
 use crate::config::ServerConfig;
@@ -43,10 +44,24 @@ impl TransactionGateway {
         // Record startup metric
         self.metrics.record_connection();
 
-        if self.config.tls_enabled {
-            self.run_tls_server(listener).await
-        } else {
-            self.run_tcp_server(listener).await
+        // Choose the appropriate server based on configuration
+        match (self.config.tls_enabled, self.config.websocket_enabled) {
+            (true, true) => {
+                info!("Starting TLS WebSocket server");
+                self.run_tls_websocket_server(listener).await
+            }
+            (true, false) => {
+                info!("Starting TLS server");
+                self.run_tls_server(listener).await
+            }
+            (false, true) => {
+                info!("Starting WebSocket server");
+                self.run_websocket_server(listener).await
+            }
+            (false, false) => {
+                info!("Starting TCP server");
+                self.run_tcp_server(listener).await
+            }
         }
     }
 
@@ -71,6 +86,32 @@ impl TransactionGateway {
                     config,
                 ).await {
                     error!("TCP connection error: {}", e);
+                }
+            });
+        }
+    }
+
+    async fn run_websocket_server(&self, listener: TcpListener) -> Result<(), Box<dyn std::error::Error>> {
+        loop {
+            let (socket, addr) = listener.accept().await?;
+
+            let inspector = Arc::clone(&self.inspector);
+            let policy_engine = Arc::clone(&self.policy_engine);
+            let connection_tracker = Arc::clone(&self.connection_tracker);
+            let config = self.config.clone();
+
+            self.metrics.record_connection();
+
+            tokio::spawn(async move {
+                if let Err(e) = websocket::handle_websocket_connection(
+                    socket,
+                    addr,
+                    inspector,
+                    policy_engine,
+                    connection_tracker,
+                    config,
+                ).await {
+                    error!("WebSocket connection error: {}", e);
                 }
             });
         }
@@ -110,4 +151,41 @@ impl TransactionGateway {
             });
         }
     }
+
+    async fn run_tls_websocket_server(&self, listener: TcpListener) -> Result<(), Box<dyn std::error::Error>> {
+        let (cert, key) = tls::load_certificates(
+            self.config.cert_path.as_ref().unwrap(),
+            self.config.key_path.as_ref().unwrap(),
+        )?;
+
+        let tls_acceptor = tls::build_tls_acceptor(cert, key)?;
+
+        loop {
+            let (socket, addr) = listener.accept().await?;
+            let tls_acceptor = tls_acceptor.clone();
+
+            let inspector = Arc::clone(&self.inspector);
+            let policy_engine = Arc::clone(&self.policy_engine);
+            let connection_tracker = Arc::clone(&self.connection_tracker);
+            let config = self.config.clone();
+
+            self.metrics.record_connection();
+
+            tokio::spawn(async move {
+                if let Err(e) = tls::handle_tls_websocket_connection(
+                    socket,
+                    addr,
+                    tls_acceptor,
+                    inspector,
+                    policy_engine,
+                    connection_tracker,
+                    config,
+                ).await {
+                    error!("TLS WebSocket connection error: {}", e);
+                }
+            });
+        }
+    }
 }
+
+// ... rest of your existing BackendConnection code ...

@@ -121,6 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             log_info!("✅ Loaded application configuration");
             log_info!("   Server: {} -> {}", config.server.listen_addr, config.server.backend_addr);
             log_info!("   TLS: {}", config.server.tls_enabled);
+            log_info!("   WebSocket: {}", config.server.websocket_enabled);
             log_info!("   FIX Parser: {}", config.fix_parser.enabled);
             log_info!("   Policy Rules: {}", config.policy_rules.len());
             config
@@ -177,6 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ));
 
     let policy_engine = Arc::new(PolicyEngine::new(policy_rules.clone()));
+    policy_engine.debug_rules();
     let connection_tracker = Arc::new(ConnectionTracker::new());
     let metrics_collector = Arc::new(MetricsCollector::new());
 

@@ -1,6 +1,7 @@
 listen_addr: "0.0.0.0:8080"
-backend_addr: "127.0.0.1:8081"
+backend_addr: "ws://127.0.0.1:8081"
 tls_enabled: false
+websocket_enabled: true
 cert_path: null
 key_path: null
 max_connections: 1000

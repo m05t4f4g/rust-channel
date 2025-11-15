@@ -1,9 +1,19 @@
-- name: "allow_fix_messages"
+- name: "allow_websocket_fix_messages"
   match_pattern:
-    msg_type: "FIX"
+    msg_type: "BINARY"  # WebSocket binary frames
     source_ip: null
     min_length: 10
     max_length: 4096
+    content_pattern: ".*35=D.*"  # Look for FIX New Order Single (D) in content
+  action: !Allow
+
+- name: "allow_websocket_text_messages"
+  match_pattern:
+    msg_type: "TEXT"  # WebSocket text frames
+    source_ip: null
+    min_length: 10
+    max_length: 4096
+    content_pattern: ".*35=D.*"  # Look for FIX New Order Single (D) in content
   action: !Allow
 
 - name: "rate_limit_protection"

@@ -4,6 +4,7 @@
 ![License](https://img.shields.io/badge/License-MIT-blue)
 ![Async](https://img.shields.io/badge/Async-Tokio-green)
 ![Config](https://img.shields.io/badge/Config-YAML%2FJSON-brightgreen)
+![WebSocket](https://img.shields.io/badge/WebSocket-Supported-yellow)
 
 rust-channel is an ultra-low-latency channel and protocol filter designed specifically for **financial and trading applications**.  
 Built in **Rust** with performance and safety in mind, it filters, validates, and routes application-layer messages (FIX, ISO8583, or custom binary formats) while maintaining **microsecond-level latency**.
@@ -14,11 +15,11 @@ Built in **Rust** with performance and safety in mind, it filters, validates, an
 
 - ⚡ High Performance: Tokio async runtime for maximum throughput
 
-- 🧩 Protocol Support: FIX, binary, and custom message formats
+- 🧩 Protocol Support: FIX, WebSocket, binary, and custom message formats
 
 - 🔍 Real-time Filtering: Packet inspection and policy-based filtering
 
-- 🔄 Bidirectional Proxy: Full TCP/TLS proxy with connection tracking
+- 🔄 Bidirectional Proxy: Full TCP/TLS/WebSocket proxy with connection tracking
 
 - 🧾 Structured Logging: Rich logging with multiple severity levels
 
@@ -42,8 +43,9 @@ Built in **Rust** with performance and safety in mind, it filters, validates, an
 - [Quick Start](#-quick-start)
 - [Configuration](#️-configuration)
 - [FIX Protocol](#️-fix-protocol-configuratio)
+- [WebSocket Support](#-WebSocket-Support)
 - [Logging](#-logging)
-- [Policy Rules](#️-policy-rules)
+- [Policy Rules](#-policy-rules)
 - [Architecture](#-architecture)
 - [Performance](#-performance)
 - [Development](#-development)
@@ -98,7 +100,7 @@ COPY config/ /etc/rustchannel/
 EXPOSE 8080
 
 # Run the application
-CMD ["rust-channel", "--fix-config", "/etc/rustchannel/fix-parser.yaml", "--policy-config", "/etc/rustchannel/policy-rules.yaml"]
+CMD ["rust-channel","--server-config","/etc/rustchannel/server-config.yaml", "--fix-config", "/etc/rustchannel/fix-parser.yaml", "--policy-config", "/etc/rustchannel/policy-rules.yaml"]
 ```
 
 ---
@@ -112,7 +114,12 @@ nc -l 8081
 
 2. **Run RustCahnnel**
 ```bash
-cargo run -- --listen-addr 127.0.0.1:8080 --backend-addr 127.0.0.1:8081
+cargo cargo run -- \
+    --listen-addr 127.0.0.1:8080 \
+    --backend-addr 127.0.0.1:8081 \
+    --fix-config config/fix-parser.yaml \
+    --policy-config config/policy-rules.yaml \
+    --log-level debug
 ```
 
 3. **Test the Channel**
@@ -134,6 +141,7 @@ Usage: rust-channel [OPTIONS]
   --key-file FILE           Key file (required for TLS)
   --fix-config FILE         FIX parser config file (default: config/fix-parser.yaml)
   --policy-config FILE      Policy rules config file (default: config/policy-rules.yaml)
+  --server-config FILE      Server configuration file (default: config/server-config.yaml)
   --log-level LEVEL         Log level: error, warn, info, debug, trace
   --log-file                Enable file logging
   --log-file-path FILE      Log file path (default: rustchannel.log)
@@ -153,6 +161,7 @@ cargo run -- \
   --key-file certs/server.key \
   --fix-config my-fix-config.yaml \
   --policy-config my-policy-rules.yaml \
+  --server-config my-server-config.yaml \
   --log-level debug
 ```
 
@@ -211,6 +220,20 @@ min_message_length: 20
 - min_message_length: Minimum allowed FIX message size
 
 ---
+
+## 🌐 WebSocket Support
+RustChannel provides full WebSocket protocol support with message inspection and filtering:
+
+WebSocket Features
+Protocol Upgrade Handling: Automatic HTTP to WebSocket upgrade
+
+Message Inspection: Full WebSocket message content analysis
+
+Binary & Text Frames: Support for both text and binary WebSocket frames
+
+Connection Tracking: WebSocket-specific connection management
+
+Policy Enforcement: Apply filtering rules to WebSocket messages
 
 ## 📝 Logging
 
@@ -377,10 +400,13 @@ src/
 │   ├── mod.rs             # Transaction gateway
 │   ├── tcp.rs             # TCP connection handler
 │   ├── tls.rs             # TLS connection handler
+│   ├── websocket.rs       # WebSocket connection handler
 │   └── backend.rs         # Backend connection management
 ├── inspection/
 │   ├── mod.rs             # Packet inspection engine
 │   ├── packet.rs          # Protocol parsers
+│   ├── fix_parser.rs      # FIX protocol parser
+│   ├── websocket.rs       # WebSocket message parser
 │   └── rules.rs           # Inspection rules
 ├── policy/
 │   ├── mod.rs             # Policy engine
@@ -423,10 +449,20 @@ This project is licensed under the **MIT License**.
 ## 📈 Roadmap
 
 - Web administration interface
+
 - Prometheus metrics integration
+
 - Dynamic rule reloading
+
 - Cluster deployment support
+
 - Machine learning-based anomaly detection
+
+- Enhanced WebSocket compression support
+
+- GraphQL over WebSocket support
+
+- Real-time dashboard for connection monitoring
 
 ---
 
